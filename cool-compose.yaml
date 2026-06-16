@@ -1,0 +1,59 @@
+services:
+  wordpress:
+    build:
+      context: docker/wordpress
+      additional_contexts:
+        config: ./config
+        root: .
+    volumes:
+      - wp-data:/var/www/html
+      - wp-content:/var/www/html/wp-content
+    environment:
+      - SERVICE_URL_WORDPRESS
+      - WORDPRESS_DB_HOST=db
+      - WORDPRESS_DB_USER=${SERVICE_USER_DB}
+      - WORDPRESS_DB_PASSWORD=${SERVICE_PASSWORD_DB}
+      - WORDPRESS_DB_NAME=${DB_NAME:-wordpress}
+
+  wordpress-cli:
+    build:
+      context: docker/wordpress-cli
+      additional_contexts:
+        config: ./config
+    volumes:
+      - wp-data:/var/www/html
+      - wp-content:/var/www/html/wp-content
+    environment:
+      - WORDPRESS_DB_HOST=db
+      - WORDPRESS_DB_USER=${SERVICE_USER_DB}
+      - WORDPRESS_DB_PASSWORD=${SERVICE_PASSWORD_DB}
+      - WORDPRESS_DB_NAME=${DB_NAME:-wordpress}
+      - WP_TITLE=${WP_TITLE}
+      - WP_USER=${WP_USER}
+      - WP_PASSWORD=${WP_PASSWORD}
+      - WP_EMAIL=${WP_EMAIL}
+
+  db:
+    image: mariadb:latest
+    volumes:
+      - db-data:/var/lib/mysql
+    environment:
+      - MARIADB_ROOT_PASSWORD=${SERVICE_PASSWORD_ROOT}
+      - MARIADB_DATABASE=${DB_NAME:-wordpress}
+      - MARIADB_USER=${SERVICE_USER_DB}
+      - MARIADB_PASSWORD=${SERVICE_PASSWORD_DB}
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    environment:
+      - SERVICE_URL_DDWORDPRESS
+      - PMA_HOST=db
+      - PMA_USER=${SERVICE_USER_DB}
+      - PMA_PASSWORD=${SERVICE_PASSWORD_DB}
+    labels:
+      - traefik.http.middlewares.authelia@file
+
+volumes:
+  wp-data:
+  wp-content:
+  db-data:
